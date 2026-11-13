@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pizza Merk</title>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg1: #2b1a12; --bg2: #4a2817; --card: #fff8ec; --ink: #3a2214;
+    --red: #e0452b; --green: #3c9a4a; --yellow: #ffc94a; --muted: #9c7b63;
+  }
+  body {
+    font-family: 'Fredoka', system-ui, sans-serif;
+    background: radial-gradient(circle at 50% 0%, var(--bg2), var(--bg1));
+    color: var(--ink); min-height: 100vh;
+    display: flex; justify-content: center; padding: 14px;
+    user-select: none; -webkit-user-select: none;
+  }
+  .app { width: 100%; max-width: 560px; }
+  .screen { display: none; }
+  .screen.active { display: block; }
+
+  /* Start */
+  .start { background: var(--card); border-radius: 22px; padding: 28px 22px; text-align: center;
+    box-shadow: 0 10px 30px rgba(0,0,0,.4); margin-top: 20px; }
+  .start h1 { font-size: 44px; color: var(--red); line-height: 1; }
+  .start .big { font-size: 80px; margin: 10px 0; animation: spin 8s linear infinite; display: inline-block; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .rules { text-align: left; margin: 18px auto; max-width: 380px; font-size: 17px; line-height: 1.6; }
+  .rules li { list-style: none; }
+  .best { font-size: 18px; color: var(--muted); margin-bottom: 16px; }
+  .btn { font-family: inherit; font-size: 22px; font-weight: 700; border: none; border-radius: 14px;
+    padding: 14px 34px; cursor: pointer; background: var(--red); color: #fff;
+    box-shadow: 0 5px 0 #a52c18; transition: transform .08s; }
+  .btn:active { transform: translateY(4px); box-shadow: 0 1px 0 #a52c18; }
+  .btn.green { background: var(--green); box-shadow: 0 5px 0 #24672f; }
+  .btn.green:active { box-shadow: 0 1px 0 #24672f; }
+
+  /* HUD */
+  .hud { display: flex; justify-content: space-between; color: #fff; font-weight: 600; font-size: 17px;
+    margin-bottom: 10px; }
+  .hud span b { color: var(--yellow); }
+
+  /* Kunde */
+  .customer { display: flex; align-items: flex-start; gap: 10px; min-height: 130px; }
+  .face { font-size: 62px; line-height: 1; animation: walk .5s ease-out; }
+  @keyframes walk { from { transform: translateX(-80px); opacity: 0; } to { transform: none; opacity: 1; } }
+  .bubble { flex: 1; background: var(--card); border-radius: 18px; padding: 12px 14px; position: relative;
+    box-shadow: 0 6px 18px rgba(0,0,0,.35); }
+  .bubble::before { content: ''; position: absolute; left: -10px; top: 22px; border: 10px solid transparent;
+    border-right-color: var(--card); border-left: 0; }
+  .bubble .who { font-size: 14px; color: var(--muted); }
+  .order { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+  .chip { background: #ffe9c4; border-radius: 10px; padding: 4px 9px; font-size: 18px; font-weight: 600; }
+  .chip.hidden-chip { background: #e8dccb; color: #b9a690; }
+  .timer { height: 8px; background: #eedcc2; border-radius: 6px; margin-top: 10px; overflow: hidden; }
+  .timer div { height: 100%; background: var(--yellow); width: 100%; }
+  .ready { margin-top: 8px; font-size: 16px; padding: 8px 18px; box-shadow: 0 4px 0 #24672f; }
+  .hint { font-size: 16px; margin-top: 4px; }
+
+  /* Pizza */
+  .pizza-wrap { display: flex; justify-content: center; margin: 14px 0 8px; position: relative; }
+  .pizza { width: min(300px, 78vw); aspect-ratio: 1; border-radius: 50%; position: relative;
+    background: radial-gradient(circle, #d9452c 0 66%, #f3c26b 67% 76%, #d99a4a 77% 100%);
+    box-shadow: 0 10px 25px rgba(0,0,0,.45), inset 0 0 0 3px rgba(0,0,0,.08); }
+  .pizza::after { content: ''; position: absolute; inset: 12%; border-radius: 50%;
+    background: radial-gradient(circle at 30% 30%, rgba(255,230,150,.55), transparent 60%),
+                radial-gradient(circle at 70% 65%, rgba(255,230,150,.45), transparent 55%); }
+  .topping { position: absolute; font-size: 30px; transform: translate(-50%,-50%); z-index: 2;
+    animation: drop .25s ease-out; pointer-events: none; }
+  @keyframes drop { from { transform: translate(-50%,-140%) scale(1.6); opacity: 0; } }
+  .shake { animation: shake .45s; }
+  @keyframes shake { 20%,60% { transform: translateX(-10px); } 40%,80% { transform: translateX(10px); } }
+  .progress { text-align: center; color: #fff; font-size: 17px; font-weight: 600; min-height: 24px; }
+
+  /* Zutaten */
+  .shelf { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 10px; }
+  .ing { background: var(--card); border: none; border-radius: 14px; padding: 8px 2px 6px; cursor: pointer;
+    font-family: inherit; font-size: 13px; font-weight: 600; color: var(--ink);
+    box-shadow: 0 4px 0 #c9a885; transition: transform .07s; }
+  .ing .e { font-size: 30px; display: block; line-height: 1.15; }
+  .ing:active { transform: translateY(3px); box-shadow: 0 1px 0 #c9a885; }
+  .ing:disabled { opacity: .45; cursor: default; }
+
+  /* Overlay */
+  .overlay { position: fixed; inset: 0; background: rgba(20,10,5,.75); display: none;
+    align-items: center; justify-content: center; padding: 20px; z-index: 10; }
+  .overlay.show { display: flex; }
+  .modal { background: var(--card); border-radius: 22px; padding: 24px 20px; text-align: center;
+    max-width: 400px; width: 100%; animation: pop .25s ease-out; }
+  @keyframes pop { from { transform: scale(.8); opacity: 0; } }
+  .modal h2 { font-size: 32px; margin-bottom: 6px; }
+  .modal p { font-size: 17px; margin: 8px 0; }
+  .modal .order { justify-content: center; margin: 10px 0 18px; }
+  .toast { position: fixed; top: 40%; left: 50%; transform: translate(-50%,-50%); font-size: 34px;
+    font-weight: 700; color: #fff; text-shadow: 0 3px 12px rgba(0,0,0,.6); pointer-events: none;
+    opacity: 0; transition: opacity .2s; z-index: 5; text-align: center; }
+  .toast.show { opacity: 1; }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- Startbildschirm -->
+  <div class="screen active" id="startScreen">
+    <div class="start">
+      <h1>Pizza Merk</h1>
+      <div class="big">🍕</div>
+      <ul class="rules">
+        <li>👀 Kunde bestellt – merk dir die Zutaten!</li>
+        <li>🙈 Dann wird die Bestellung verdeckt.</li>
+        <li>🍅 Beleg die Pizza aus dem Kopf.</li>
+        <li>📈 Jeder Kunde will 1 Zutat mehr.</li>
+        <li>💥 Ein Fehler = zurück zu Kunde 1!</li>
+      </ul>
+      <div class="best">🏆 Rekord: <b id="bestStart">0</b> Kunden</div>
+      <button class="btn" id="startBtn">Los geht's!</button>
+    </div>
+  </div>
+
+  <!-- Spiel -->
+  <div class="screen" id="gameScreen">
+    <div class="hud">
+      <span>Kunde <b id="custNo">1</b></span>
+      <span>🏆 Rekord <b id="bestHud">0</b></span>
+    </div>
+
+    <div class="customer" id="customer">
+      <div class="face" id="face">🧑</div>
+      <div class="bubble">
+        <div class="who" id="who">Max sagt:</div>
+        <div id="bubbleBody"></div>
+      </div>
+    </div>
+
+    <div class="pizza-wrap">
+      <div class="pizza" id="pizza"></div>
+    </div>
+    <div class="progress" id="progress"></div>
+
+    <div class="shelf" id="shelf"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<div class="overlay" id="overlay">
+  <div class="modal" id="modal"></div>
+</div>
+
+<script>
+const INGREDIENTS = [
+  { id: 'tomate',   e: '🍅', n: 'Tomate' },
+  { id: 'kaese',    e: '🧀', n: 'Käse' },
+  { id: 'pilze',    e: '🍄', n: 'Pilze' },
+  { id: 'paprika',  e: '🫑', n: 'Paprika' },
+  { id: 'zwiebel',  e: '🧅', n: 'Zwiebel' },
+  { id: 'oliven',   e: '🫒', n: 'Oliven' },
+  { id: 'mais',     e: '🌽', n: 'Mais' },
+  { id: 'ananas',   e: '🍍', n: 'Ananas' },
+  { id: 'speck',    e: '🥓', n: 'Speck' },
+  { id: 'peperoni', e: '🌶️', n: 'Peperoni' },
+  { id: 'garnele',  e: '🦐', n: 'Garnele' },
+  { id: 'spinat',   e: '🥬', n: 'Spinat' },
+  { id: 'schinken', e: '🍖', n: 'Schinken' },
+  { id: 'fisch',    e: '🐟', n: 'Thunfisch' },
+  { id: 'knobi',    e: '🧄', n: 'Knoblauch' },
+  { id: 'ei',       e: '🥚', n: 'Ei' },
+];
+const FACES = ['🧑','👩','👨','👧','👦','👵','👴','🧔','👱‍♀️','👩‍🦰','🧑‍🦱','👨‍🦳','🤠','🧑‍🚀','👷','🧑‍🍳','🕵️','🧛','🤴','👸'];
+const NAMES = ['Max','Lena','Ben','Mia','Paul','Emma','Finn','Lea','Tom','Sophie','Luis','Hanna','Jonas','Marie','Elias','Clara','Noah','Ida','Felix','Nele'];
+
+const $ = id => document.getElementById(id);
+const rand = arr => arr[Math.floor(Math.random() * arr.length)];
+const ING = Object.fromEntries(INGREDIENTS.map(i => [i.id, i]));
+
+let best = 0;
+try { best = parseInt(localStorage.getItem('pizzaMerkBest')) || 0; } catch (e) {}
+
+let level = 1;          // Kunde Nr. = Anzahl Zutaten
+let order = {};         // id -> Anzahl
+let placed = {};        // id -> Anzahl
+let placedTotal = 0;
+let phase = 'idle';     // memo | build | idle
+let memoTimer = null, memoRAF = null;
+let lastFace = '';
+
+/* ---------- Sound ---------- */
+let actx = null;
+function beep(freq, dur = 0.1, type = 'sine', vol = 0.15, delay = 0) {
+  try {
+    if (!actx) actx = new (window.AudioContext || window.webkitAudioContext)();
+    const t = actx.currentTime + delay;
+    const o = actx.createOscillator(), g = actx.createGain();
+    o.type = type; o.frequency.value = freq;
+    g.gain.setValueAtTime(vol, t);
+    g.gain.exponentialRampToValueAtTime(0.001, t + dur);
+    o.connect(g); g.connect(actx.destination);
+    o.start(t); o.stop(t + dur);
+  } catch (e) {}
+}
+const sClick = () => beep(520 + Math.random() * 120, 0.08, 'triangle');
+const sWin = () => [523, 659, 784, 1046].forEach((f, i) => beep(f, 0.15, 'triangle', 0.15, i * 0.09));
+const sFail = () => [330, 262, 196].forEach((f, i) => beep(f, 0.25, 'sawtooth', 0.1, i * 0.15));
+
+/* ---------- Setup ---------- */
+function updateBest() { $('bestStart').textContent = best; $('bestHud').textContent = best; }
+updateBest();
+
+function buildShelf() {
+  const shelf = $('shelf');
+  shelf.innerHTML = '';
+  INGREDIENTS.forEach(ing => {
+    const b = document.createElement('button');
+    b.className = 'ing';
+    b.innerHTML = `<span class="e">${ing.e}</span>${ing.n}`;
+    b.onclick = () => place(ing.id);
+    shelf.appendChild(b);
+  });
+}
+buildShelf();
+
+function setShelfEnabled(on) {
+  document.querySelectorAll('.ing').forEach(b => b.disabled = !on);
+}
+
+/* ---------- Bestellung erzeugen (immer zufällig) ---------- */
+function makeOrder(n) {
+  const o = {};
+  // Anfangs möglichst verschiedene Zutaten, ab 16+ zwangsläufig doppelt
+  let pool = INGREDIENTS.map(i => i.id).sort(() => Math.random() - 0.5);
+  for (let k = 0; k < n; k++) {
+    let id;
+    if (k < pool.length && Math.random() < 0.8) id = pool[k];
+    else id = rand(INGREDIENTS).id;
+    o[id] = (o[id] || 0) + 1;
+  }
+  return o;
+}
+
+function orderChips(o, hidden = false) {
+  return Object.entries(o).map(([id, c]) =>
+    hidden ? `<span class="chip hidden-chip">❓</span>`
+           : `<span class="chip">${c > 1 ? c + '× ' : ''}${ING[id].e} ${ING[id].n}</span>`
+  ).join('');
+}
+
+/* ---------- Spielablauf ---------- */
+function startGame() {
+  $('startScreen').classList.remove('active');
+  $('gameScreen').classList.add('active');
+  level = 1;
+  nextCustomer();
+}
+
+function nextCustomer() {
+  clearTimeout(memoTimer); cancelAnimationFrame(memoRAF);
+  order = makeOrder(level);
+  placed = {}; placedTotal = 0;
+  $('pizza').innerHTML = '';
+  $('custNo').textContent = level;
+
+  let face; do { face = rand(FACES); } while (face === lastFace);
+  lastFace = face;
+  const faceEl = $('face');
+  faceEl.textContent = face;
+  faceEl.style.animation = 'none'; void faceEl.offsetWidth; faceEl.style.animation = '';
+  $('who').textContent = rand(NAMES) + ' bestellt:';
+
+  phase = 'memo';
+  setShelfEnabled(false);
+  $('progress').textContent = '👀 Merk dir die Bestellung!';
+
+  const ms = 1500 + level * 1100;
+  $('bubbleBody').innerHTML = `
+    <div class="order">${orderChips(order)}</div>
+    <div class="timer"><div id="bar"></div></div>
+    <button class="btn green ready" id="readyBtn">Gemerkt! ✔</button>`;
+  $('readyBtn').onclick = startBuild;
+
+  const start = performance.now();
+  const tick = now => {
+    const p = Math.max(0, 1 - (now - start) / ms);
+    const bar = $('bar'); if (bar) bar.style.width = (p * 100) + '%';
+    if (p > 0 && phase === 'memo') memoRAF = requestAnimationFrame(tick);
+  };
+  memoRAF = requestAnimationFrame(tick);
+  memoTimer = setTimeout(startBuild, ms);
+}
+
+function startBuild() {
+  if (phase !== 'memo') return;
+  clearTimeout(memoTimer); cancelAnimationFrame(memoRAF);
+  phase = 'build';
+  $('bubbleBody').innerHTML = `
+    <div class="order">${'<span class="chip hidden-chip">❓</span>'.repeat(level)}</div>
+    <div class="hint">🍕 Jetzt belegen – ${level} ${level === 1 ? 'Zutat' : 'Zutaten'}!</div>`;
+  setShelfEnabled(true);
+  updateProgress();
+}
+
+function updateProgress() {
+  $('progress').textContent = `${placedTotal} / ${level} belegt`;
+}
+
+function place(id) {
+  if (phase !== 'build') return;
+  placed[id] = (placed[id] || 0) + 1;
+  placedTotal++;
+  addTopping(ING[id].e);
+
+  if (!order[id] || placed[id] > order[id]) {
+    fail(id);
+    return;
+  }
+  sClick();
+  updateProgress();
+  // Chip aufdecken
+  const chips = document.querySelectorAll('#bubbleBody .chip');
+  if (chips[placedTotal - 1]) {
+    chips[placedTotal - 1].classList.remove('hidden-chip');
+    chips[placedTotal - 1].textContent = ING[id].e;
+  }
+  if (placedTotal === level) win();
+}
+
+function addTopping(e) {
+  const t = document.createElement('div');
+  t.className = 'topping';
+  t.textContent = e;
+  const r = Math.sqrt(Math.random()) * 30;   // innerhalb der Soße
+  const a = Math.random() * Math.PI * 2;
+  t.style.left = (50 + r * Math.cos(a)) + '%';
+  t.style.top = (50 + r * Math.sin(a)) + '%';
+  t.style.rotate = (Math.random() * 60 - 30) + 'deg';
+  $('pizza').appendChild(t);
+}
+
+function toast(txt) {
+  const t = $('toast');
+  t.textContent = txt; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 900);
+}
+
+function win() {
+  phase = 'idle';
+  setShelfEnabled(false);
+  sWin();
+  if (level > best) {
+    best = level;
+    try { localStorage.setItem('pizzaMerkBest', best); } catch (e) {}
+    updateBest();
+  }
+  toast(rand(['Lecker! 😋', 'Perfekt! ⭐', 'Mamma mia! 🤌', 'Top! 👌', 'Danke! 😄']));
+  $('progress').textContent = '✅ Kunde zufrieden!';
+  setTimeout(() => { level++; nextCustomer(); }, 1300);
+}
+
+function fail(wrongId) {
+  phase = 'idle';
+  setShelfEnabled(false);
+  sFail();
+  const pz = $('pizza');
+  pz.classList.remove('shake'); void pz.offsetWidth; pz.classList.add('shake');
+  $('face').textContent = '😡';
+  const reason = order[wrongId]
+    ? `Zu viel ${ING[wrongId].e} ${ING[wrongId].n}!`
+    : `${ING[wrongId].e} ${ING[wrongId].n} war nicht bestellt!`;
+  const served = level - 1;
+  setTimeout(() => {
+    $('modal').innerHTML = `
+      <h2>💥 Falsch!</h2>
+      <p>${reason}</p>
+      <p>Bestellt war:</p>
+      <div class="order">${orderChips(order)}</div>
+      <p>Du hast <b>${served}</b> Kunden geschafft · 🏆 Rekord: <b>${best}</b></p>
+      <br><button class="btn" id="againBtn">Von vorne 🔁</button>`;
+    $('overlay').classList.add('show');
+    $('againBtn').onclick = () => {
+      $('overlay').classList.remove('show');
+      level = 1;
+      nextCustomer();
+    };
+  }, 700);
+}
+
+$('startBtn').onclick = startGame;
+</script>
+</body>
+</html>

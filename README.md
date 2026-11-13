@@ -6,7 +6,7 @@ Ein Merkspiel im Browser: Kunden bestellen Pizza, du merkst dir die Zutaten und 
 
 👉 https://tillwassenhoven1-glitch.github.io/Pizza-Bestellung-/
 
-Keine Installation, kein Konto nötig – läuft auf Handy, iPad und PC. 🎮 Version 0.1 · Open Beta
+Keine Installation, kein Konto nötig – läuft auf Handy, iPad und PC. 🎮 Version 0.3 · Open Beta
 
 ## So funktioniert's
 
@@ -22,6 +22,7 @@ Keine Installation, kein Konto nötig – läuft auf Handy, iPad und PC. 🎮 Ve
 - 🥫 16 Zutaten: Tomate, Käse, Pilze, Paprika, Zwiebel, Oliven, Mais, Ananas, Speck, Peperoni, Garnele, Spinat, Schinken, Thunfisch, Knoblauch & Ei
 - 🔢 Bei großen Bestellungen kommen Zutaten auch doppelt vor (z. B. „2× 🍄 Pilze“)
 - ⏱️ Merk-Timer, der mit jedem Kunden länger wird
+- ⚙️ Einstellungen: Merkzeit wählen – ⚡ Schnell, 🙂 Normal, 😌 Entspannt oder ♾️ Ohne Limit
 - 🍕 Die Zutaten landen wirklich auf der Pizza
 - 😡 Bei einem Fehler siehst du, was der Kunde eigentlich bestellt hatte
 - 🧑‍🍳 Immer neue Kunden mit unterschiedlichen Gesichtern und Namen
@@ -36,3 +37,4 @@ Keine Installation, kein Konto nötig – läuft auf Handy, iPad und PC. 🎮 Ve
 | Zutat belegen | Auf die Zutat tippen/klicken |
 | Bestellung früher verdecken | „Gemerkt! ✔“ |
 | Neue Runde | „Von vorne 🔁“ |
+| Merkzeit einstellen | ⚙️ im Startmenü oder oben rechts im Spiel |

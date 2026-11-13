@@ -94,6 +94,16 @@
   .modal h2 { font-size: 32px; margin-bottom: 6px; }
   .modal p { font-size: 17px; margin: 8px 0; }
   .modal .order { justify-content: center; margin: 10px 0 18px; }
+  .link-btn { font-family: inherit; background: none; border: none; color: var(--ink); font-size: 18px;
+    font-weight: 600; margin-top: 16px; cursor: pointer; text-decoration: underline; }
+  .version { margin-top: 12px; font-size: 14px; color: var(--muted); }
+  .gear { background: none; border: none; font-size: 20px; cursor: pointer; margin-left: 6px; vertical-align: middle; }
+  .opts { display: grid; gap: 8px; margin: 14px 0 6px; text-align: left; }
+  .opt { font-family: inherit; border: 3px solid #ecd9bd; background: #fff; border-radius: 14px; padding: 10px 12px;
+    cursor: pointer; font-size: 17px; color: var(--ink); display: flex; justify-content: space-between; align-items: center; }
+  .opt small { color: var(--muted); font-size: 14px; }
+  .opt.sel { border-color: var(--green); background: #eaf7ec; }
+  .modal .note { font-size: 14px; color: var(--muted); margin-bottom: 14px; }
   .toast { position: fixed; top: 40%; left: 50%; transform: translate(-50%,-50%); font-size: 34px;
     font-weight: 700; color: #fff; text-shadow: 0 3px 12px rgba(0,0,0,.6); pointer-events: none;
     opacity: 0; transition: opacity .2s; z-index: 5; text-align: center; }
@@ -117,6 +127,8 @@
       </ul>
       <div class="best">🏆 Rekord: <b id="bestStart">0</b> Kunden</div>
       <button class="btn" id="startBtn">Los geht's!</button>
+      <div><button class="link-btn" id="settingsStart">⚙️ Einstellungen</button></div>
+      <div class="version">Version 0.3 · Open Beta</div>
     </div>
   </div>
 
@@ -124,7 +136,7 @@
   <div class="screen" id="gameScreen">
     <div class="hud">
       <span>Kunde <b id="custNo">1</b></span>
-      <span>🏆 Rekord <b id="bestHud">0</b></span>
+      <span>🏆 Rekord <b id="bestHud">0</b> <button class="gear" id="settingsHud" title="Einstellungen">⚙️</button></span>
     </div>
 
     <div class="customer" id="customer">
@@ -178,6 +190,42 @@ const ING = Object.fromEntries(INGREDIENTS.map(i => [i.id, i]));
 
 let best = 0;
 try { best = parseInt(localStorage.getItem('pizzaMerkBest')) || 0; } catch (e) {}
+
+/* ---------- Einstellungen: Merkzeit ---------- */
+const MEMO_OPTIONS = [
+  { id: 'schnell',   label: '⚡ Schnell',       desc: '1 s + 0,6 s pro Zutat', base: 1000, per: 600 },
+  { id: 'normal',    label: '🙂 Normal',        desc: '1,5 s + 1,1 s pro Zutat', base: 1500, per: 1100 },
+  { id: 'entspannt', label: '😌 Entspannt',     desc: '2 s + 2 s pro Zutat', base: 2000, per: 2000 },
+  { id: 'ohne',      label: '♾️ Ohne Limit',    desc: 'bis du „Gemerkt!“ drückst', base: 0, per: 0 },
+];
+let memoSetting = 'normal';
+try { const s = localStorage.getItem('pizzaMerkTime'); if (MEMO_OPTIONS.some(o => o.id === s)) memoSetting = s; } catch (e) {}
+
+function openSettings() {
+  const render = () => {
+    $('modal').innerHTML = `
+      <h2>⚙️ Einstellungen</h2>
+      <p><b>⏱️ Zeit zum Merken</b></p>
+      <div class="opts">${MEMO_OPTIONS.map(o =>
+        `<button class="opt ${o.id === memoSetting ? 'sel' : ''}" data-id="${o.id}">
+           <span>${o.label}</span><small>${o.desc}</small></button>`).join('')}</div>
+      <div class="note">Wird sofort übernommen.</div>
+      <button class="btn green" id="closeSettings">Fertig ✔</button>`;
+    document.querySelectorAll('.opt').forEach(b => b.onclick = () => {
+      memoSetting = b.dataset.id;
+      try { localStorage.setItem('pizzaMerkTime', memoSetting); } catch (e) {}
+      sClick(); render();
+    });
+    $('closeSettings').onclick = () => {
+      $('overlay').classList.remove('show');
+      if (phase === 'memo') showMemo();   // Timer neu starten
+    };
+  };
+  // Merk-Timer pausieren, solange die Einstellungen offen sind
+  if (phase === 'memo') { clearTimeout(memoTimer); cancelAnimationFrame(memoRAF); }
+  render();
+  $('overlay').classList.add('show');
+}
 
 let level = 1;          // Kunde Nr. = Anzahl Zutaten
 let order = {};         // id -> Anzahl
@@ -272,13 +320,21 @@ function nextCustomer() {
   phase = 'memo';
   setShelfEnabled(false);
   $('progress').textContent = '👀 Merk dir die Bestellung!';
+  showMemo();
+}
 
-  const ms = 1500 + level * 1100;
+// Bestellung anzeigen + Merk-Timer starten (auch nach Einstellungen neu)
+function showMemo() {
+  clearTimeout(memoTimer); cancelAnimationFrame(memoRAF);
+  const opt = MEMO_OPTIONS.find(o => o.id === memoSetting);
+  const unlimited = opt.id === 'ohne';
+  const ms = opt.base + level * opt.per;
   $('bubbleBody').innerHTML = `
     <div class="order">${orderChips(order)}</div>
-    <div class="timer"><div id="bar"></div></div>
+    ${unlimited ? '' : '<div class="timer"><div id="bar"></div></div>'}
     <button class="btn green ready" id="readyBtn">Gemerkt! ✔</button>`;
   $('readyBtn').onclick = startBuild;
+  if (unlimited) return;
 
   const start = performance.now();
   const tick = now => {
@@ -387,6 +443,8 @@ function fail(wrongId) {
 }
 
 $('startBtn').onclick = startGame;
+$('settingsStart').onclick = openSettings;
+$('settingsHud').onclick = openSettings;
 </script>
 </body>
 </html>
